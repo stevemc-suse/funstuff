@@ -1,0 +1,60 @@
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: minecraft-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: madlab-bedrock 
+  labels:
+    app: madlab-bedrock
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: madlab-bedrock
+  template:
+    metadata:
+      labels:
+        app: madlab-bedrock
+    spec:
+      containers:
+      - name: madlab-bedrock
+        image: itzg/minecraft-bedrock-server
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+        env:
+        - name: EULA
+          value: "TRUE"
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: minecraft-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: madlab-bedrock
+  labels:
+    app: madlab-bedrock
+spec:
+  selector:
+    app: madlab-bedrock
+  ports:
+    - port: 19132
+      protocol: UDP
+  
